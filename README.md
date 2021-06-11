@@ -1,4 +1,5 @@
 # GANs N' Roses Pytorch
+![](teaser.gif)
 ![](teaser.png)
 
 This is the PyTorch implementation of GANs N’ Roses: Stable, Controllable, Diverse Image to Image Translation (works for videos too!).
