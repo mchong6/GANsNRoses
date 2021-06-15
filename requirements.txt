@@ -7,3 +7,4 @@ moviepy
 lpips 
 ninja 
 gradio
+torchvision
