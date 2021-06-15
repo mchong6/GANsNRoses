@@ -1,9 +1,9 @@
 # GANs N' Roses Pytorch
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mchong6/GANsNRoses/blob/colab/inference_colab.ipynb)
 ![](teaser.gif)
 ![](teaser.png)
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mchong6/GANsNRoses/blob/colab/inference_colab.ipynb)
 This is the PyTorch implementation of [GANs N’ Roses: Stable, Controllable, Diverse Image to Image Translation (works for videos too!)](https://arxiv.org/abs/2106.06561).
 
 >**Abstract:**<br>
