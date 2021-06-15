@@ -20,6 +20,9 @@ from base64 import b64encode
 import gradio as gr
 from torchvision import transforms
 
+torch.hub.download_url_to_file('https://i.imgur.com/HiOTPNg.png', 'mona.png')
+torch.hub.download_url_to_file('https://i.imgur.com/Cw8HcTN.png', 'painting.png')
+
 device = 'cpu'
 latent_dim = 8
 n_mlp = 5
@@ -47,7 +50,7 @@ plt.rcParams['figure.dpi'] = 200
 
 torch.manual_seed(84986)
 
-num_styles = 1
+num_styles = 5
 style = torch.randn([num_styles, latent_dim]).to(device)
 
 
@@ -74,4 +77,8 @@ gr.Interface(
     gr.outputs.Image(type="pil", label="Output"),
     title=title,
     description=description,
-    article=article).launch(debug=True)
+    article=article,
+    examples=examples[
+        ["mona.png"],
+        ["painting.png"]
+    ]).launch()
