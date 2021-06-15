@@ -16,7 +16,6 @@ import moviepy.video.io.ImageSequenceClip
 import scipy
 import kornia.augmentation as K
 
-from IPython.display import HTML
 from base64 import b64encode
 import gradio as gr
 from torchvision import transforms
