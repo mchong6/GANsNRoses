@@ -7,6 +7,5 @@ opencv-python
 dlib 
 moviepy 
 lpips 
-aubio 
 ninja 
 gradio
