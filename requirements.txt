@@ -2,6 +2,7 @@ tqdm
 gdown 
 kornia 
 scipy 
+cmake
 opencv-python 
 dlib 
 moviepy 
