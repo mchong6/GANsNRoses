@@ -48,6 +48,14 @@ Our notebook provides a comprehensive demo of both image and video translation. 
 ## Citation
 If you use this code or ideas from our paper, please cite our paper:
 ```
+@misc{chong2021gans,
+      title={GANs N' Roses: Stable, Controllable, Diverse Image to Image Translation (works for videos too!)}, 
+      author={Min Jin Chong and David Forsyth},
+      year={2021},
+      eprint={2106.06561},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
 ```
 
 ## Acknowledgments
