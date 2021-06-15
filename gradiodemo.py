@@ -17,7 +17,6 @@ import scipy
 import cv2
 import dlib
 import kornia.augmentation as K
-from aubio import tempo, source
 
 from IPython.display import HTML
 from base64 import b64encode
