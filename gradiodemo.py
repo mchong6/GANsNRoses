@@ -78,7 +78,7 @@ gr.Interface(
     title=title,
     description=description,
     article=article,
-    examples=examples[
+    examples=[
         ["mona.png"],
         ["painting.png"]
     ]).launch()
