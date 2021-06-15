@@ -11,7 +11,7 @@ This is the PyTorch implementation of [GANs N’ Roses: Stable, Controllable, Di
 ## Dependency
 ```bash
 conda install --yes -c pytorch pytorch=1.7.1 torchvision cudatoolkit=<CUDA_VERSION>
-pip install tqdm gdown kornia scipy opencv-python dlib moviepy lpips aubio
+pip install tqdm gdown kornia scipy opencv-python dlib moviepy lpips aubio ninja
 ```
 
 ## Dataset
