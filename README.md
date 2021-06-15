@@ -1,5 +1,6 @@
 # GANs N' Roses Pytorch
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mchong6/GANsNRoses/blob/colab/inference_colab.ipynb)
 ![](teaser.gif)
 ![](teaser.png)
 
