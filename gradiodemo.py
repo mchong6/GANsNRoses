@@ -50,7 +50,7 @@ plt.rcParams['figure.dpi'] = 200
 
 torch.manual_seed(84986)
 
-num_styles = 5
+num_styles = 1
 style = torch.randn([num_styles, latent_dim]).to(device)
 
 
