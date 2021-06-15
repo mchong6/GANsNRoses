@@ -15,6 +15,7 @@ pip install tqdm gdown kornia scipy opencv-python dlib moviepy lpips aubio
 ```
 
 ## Dataset
+The dataset we use for training is the [selfie2anime](https://drive.google.com/file/d/1xOWj1UVgp6NKMT3HbPhBbtq2A4EDkghF/view?usp=sharing) dataset from UGATIT. You can also use your own dataset in the following format.
 ```
 └── YOUR_DATASET_NAME
    ├── trainA
