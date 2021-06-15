@@ -15,7 +15,6 @@ from model import *
 import moviepy.video.io.ImageSequenceClip
 import scipy
 import cv2
-import dlib
 import kornia.augmentation as K
 
 from IPython.display import HTML
