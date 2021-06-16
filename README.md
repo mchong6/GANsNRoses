@@ -6,6 +6,9 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mchong6/GANsNRoses/blob/main/inference_colab.ipynb)
 This is the PyTorch implementation of [GANs N’ Roses: Stable, Controllable, Diverse Image to Image Translation (works for videos too!)](https://arxiv.org/abs/2106.06561).
 
+***New***
+[Gradio Web Demo](https://gradio.app/g/AK391/GANsNRoses)
+
 >**Abstract:**<br>
 >We show how to learn a map that takes a content code, derived from a face image, and a randomly chosen style code to an anime image. We derive an adversarial loss from our simple and effective definitions of style and content. This adversarial loss guarantees the map is diverse -- a very wide range of anime can be produced from a single content code. Under plausible assumptions, the map is not just diverse, but also correctly represents the probability of an anime, conditioned on an input face. In contrast, current multimodal generation procedures cannot capture the complex styles that appear in anime.  Extensive quantitative experiments support the idea the map is correct. Extensive qualitative results show that the method can generate a much more diverse range of styles than SOTA comparisons. Finally, we show that our formalization of content and style allows us to perform video to video translation without ever training on videos.
 
@@ -38,6 +41,7 @@ The dataset we use for training is the [selfie2anime](https://drive.google.com/f
 ```
 
 ## Training
+For training you might want to switch to train branch in order to use custom cuda kernel codes. Otherwise, it will use the Pytorch native implementation.
 ```bash
 python train.py --name EXP_NAME --d_path YOUR_DATASET_NAME --batch BATCH_SIZE
 ```

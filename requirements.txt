@@ -1,0 +1,10 @@
+tqdm 
+gdown 
+kornia 
+scipy 
+opencv-python 
+moviepy 
+lpips 
+ninja 
+gradio
+torchvision
