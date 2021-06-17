@@ -320,7 +320,7 @@ if __name__ == '__main__':
     parser.add_argument('--ckpt', type=str, default=None)
     parser.add_argument('--lr', type=float, default=2e-3)
     parser.add_argument('--local_rank', type=int, default=0)
-    parser.add_argument('--num_down', type=int, default=3)
+    parser.add_argument('--num_down', type=int, default=4)
     parser.add_argument('--name', type=str, required=True)
     parser.add_argument('--d_path', type=str, required=True)
     parser.add_argument('--latent_dim', type=int, default=8)
@@ -423,13 +423,13 @@ if __name__ == '__main__':
         )
     train_transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5), inplace=True)
+        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
     ])
 
     test_transform = transforms.Compose([
         transforms.Resize((args.size, args.size)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5), inplace=True)
+        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
     ])
 
     aug = nn.Sequential(

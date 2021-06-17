@@ -630,15 +630,16 @@ class Discriminator(nn.Module):
         self.l_branch = nn.Sequential(*l_branch)
 
 
-        g_branch = self.make_net_(8)
+        g_branch = self.make_net_(16)
         self.g_branch = nn.Sequential(*g_branch)
-        self.g_adv = ConvLayer(channels[8], 1, 1, activate=False)
+        self.g_adv = ConvLayer(channels[16], 1, 1, activate=False)
 
-        self.g_std = nn.Sequential(ConvLayer(channels[8], channels[4], 3, downsample=True),
+        self.g_std = nn.Sequential(ConvLayer(channels[16], channels[8], 3, downsample=True),
+        ConvLayer(channels[8], channels[4], 3, downsample=True),
                       nn.Flatten(),
-                      EqualLinear(channels[4] * 4 * 4, 128, activation='fused_lrelu'), 
+                      EqualLinear(channels[4] * 4 * 4, 8, activation='fused_lrelu'), 
                       )
-        self.g_final = EqualLinear(128, 1, activation=False)
+        self.g_final = EqualLinear(8, 1, activation=False)
 
 
     def make_net_(self, out_size):
