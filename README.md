@@ -52,7 +52,7 @@ python train.py --name EXP_NAME --d_path YOUR_DATASET_NAME --batch BATCH_SIZE
 The full model checkpoint is [here](https://drive.google.com/file/d/1xdjoTp0oRAXZpixYQmmQ-5rlXV36bSq-/view?usp=sharing) if you wish to you it for finetuning etc.
 
 ## Inference
-Our notebook provides a comprehensive demo of both image and video translation. Pretrained model is automatically downloaded.
+Our notebook provides a comprehensive demo of both image and video translation. Pretrained model is automatically downloaded. As of now only female translation works well since the dataset only contains females. A more comprehensive dataset is needed to enable male translation too.
 
 
 ## Citation
