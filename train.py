@@ -229,7 +229,8 @@ def train(args, trainA_loader, trainB_loader, testA_loader, testB_loader, G_A2B,
                          2*g_nonsaturating_loss(fake_L_logit2, (1,)))
 
         # style consis loss
-        G_con_loss = 50 * (A2B_style.var(0, unbiased=False).sum() + B2A_style.var(0, unbiased=False).sum())
+        #G_con_loss = 50 * (A2B_style.var(0, unbiased=False).sum() + B2A_style.var(0, unbiased=False).sum())
+        G_con_loss = 50 * (cosine_distance(A2B_style).sum() + cosine_distance(B2A_style).sum())
                     
         # cycle recon
         A2B2A_content, A2B2A_style = G_B2A.encode(fake_A2B)
@@ -237,15 +238,19 @@ def train(args, trainA_loader, trainB_loader, testA_loader, testB_loader, G_A2B,
         fake_A2B2A = G_B2A.decode(A2B2A_content, shuffle_batch(A2B_style))
         fake_B2A2B = G_A2B.decode(B2A2B_content, shuffle_batch(B2A_style))
 
-        G_cycle_loss = 20 * (F.mse_loss(fake_A2B2A, A) + F.mse_loss(fake_B2A2B, B))
+        G_cycle_loss = 20 * (F.l1_loss(fake_A2B2A, A) + F.l1_loss(fake_B2A2B, B))
         lpips_loss = 10 * (lpips_fn(fake_A2B2A, A).mean() + lpips_fn(fake_B2A2B, B).mean()) #10 for anime
 
         # style reconstruction
-        G_style_loss = 5 * (mse_criterion(A2B2A_style, input_A2B_style) +\
-                            mse_criterion(B2A2B_style, input_B2A_style))
+        #G_style_loss = 0 * (mse_criterion(A2B2A_style, input_A2B_style) +\
+        #                    mse_criterion(B2A2B_style, input_B2A_style))
+
+        fake_B2B, _,_ = G_A2B(aug_B)
+        fake_A2A,_,_ = G_B2A(aug_A)
+        G_id_loss = 10*(F.l1_loss(fake_B2B, aug_B) + F.l1_loss(fake_A2A, aug_A))
 
 
-        G_loss =  G_adv_loss + G_cycle_loss + G_con_loss + lpips_loss + G_style_loss
+        G_loss =  G_adv_loss + G_cycle_loss + G_con_loss + lpips_loss + G_id_loss
 
         loss_dict['G_adv'] = G_adv_loss
         loss_dict['G_con'] = G_con_loss
@@ -274,7 +279,7 @@ def train(args, trainA_loader, trainB_loader, testA_loader, testB_loader, G_A2B,
             pbar.set_description(
                 (
                     f'Dadv: {D_adv_loss_val:.2f}; lpips: {lpips_val:.2f} '
-                    f'Gadv: {G_adv_loss_val:.2f}; Gcycle: {G_cycle_loss_val:.2f}; GMS: {G_con_loss_val:.2f} {G_style_loss.item():.2f}'
+                    f'Gadv: {G_adv_loss_val:.2f}; Gcycle: {G_cycle_loss_val:.2f}; GMS: {G_con_loss_val:.2f} '
                 )
             )
 
@@ -361,12 +366,13 @@ if __name__ == '__main__':
     d_reg_ratio = args.d_reg_every / (args.d_reg_every + 1)
 
     G_optim = optim.Adam( list(G_A2B.parameters()) + list(G_B2A.parameters()), lr=args.lr, betas=(0, 0.99))
+    
     D_optim = optim.Adam(
         list(D_L.parameters()) + list(D_A.parameters()) + list(D_B.parameters()),
         lr=args.lr, betas=(0**d_reg_ratio, 0.99**d_reg_ratio))
 
     if args.ckpt is not None:
-        ckpt = torch.load(args.ckpt, map_location=lambda storage, loc: storage)
+        ckpt = torch.load(args.ckpt, map_location='cpu')
 
         try:
             ckpt_name = os.path.basename(args.ckpt)
@@ -379,13 +385,14 @@ if __name__ == '__main__':
         G_B2A.load_state_dict(ckpt['G_B2A'])
         G_A2B_ema.load_state_dict(ckpt['G_A2B_ema'])
         G_B2A_ema.load_state_dict(ckpt['G_B2A_ema'])
-        D_A.load_state_dict(ckpt['D_A'])
-        D_B.load_state_dict(ckpt['D_B'])
+        D_A.load_state_dict(ckpt['D_A'], strict=False)
+        D_B.load_state_dict(ckpt['D_B'], strict=False)
         D_L.load_state_dict(ckpt['D_L'])
 
         G_optim.load_state_dict(ckpt['G_optim'])
         D_optim.load_state_dict(ckpt['D_optim'])
         args.start_iter = ckpt['iter']
+
 
     if args.distributed:
         G_A2B = nn.parallel.DistributedDataParallel(

@@ -8,6 +8,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.autograd import Function
+import torchvision.models as models
+
 
 from op import FusedLeakyReLU, fused_leaky_relu, upfirdn2d
 n_latent = 11
@@ -625,21 +627,18 @@ class Discriminator(nn.Module):
     def __init__(self, size, channel_multiplier=2, blur_kernel=[1, 3, 3, 1]):
         super().__init__()
         self.size = size
-        l_branch = self.make_net_(32)
-        l_branch += [ConvLayer(channels[32], 1, 1, activate=False)]
+        l_branch = self.make_net_(16)
+        l_branch += [ConvLayer(channels[16], 1, 1, activate=False)]
         self.l_branch = nn.Sequential(*l_branch)
 
 
-        g_branch = self.make_net_(16)
+        g_branch = self.make_net_(4)
+        g_branch += [ nn.Flatten(),
+                  EqualLinear(channels[4] * 4 * 4, 128, activation='fused_lrelu'), 
+                ]
         self.g_branch = nn.Sequential(*g_branch)
-        self.g_adv = ConvLayer(channels[16], 1, 1, activate=False)
-
-        self.g_std = nn.Sequential(ConvLayer(channels[16], channels[8], 3, downsample=True),
-        ConvLayer(channels[8], channels[4], 3, downsample=True),
-                      nn.Flatten(),
-                      EqualLinear(channels[4] * 4 * 4, 8, activation='fused_lrelu'), 
-                      )
-        self.g_final = EqualLinear(8, 1, activation=False)
+        self.g_adv = EqualLinear(128, 1, activation=False)
+        self.g_final = EqualLinear(128, 1, activation=False)
 
 
     def make_net_(self, out_size):
@@ -662,11 +661,9 @@ class Discriminator(nn.Module):
         g_act = self.g_branch(x)
         g_adv = self.g_adv(g_act)
 
-        output = self.g_std(g_act)
-        g_stddev = torch.sqrt(output.var(0, keepdim=True, unbiased=False) + 1e-8).repeat(x.size(0),1)
+        g_stddev = torch.sqrt(g_act.var(0, keepdim=True, unbiased=False) + 1e-8).repeat(x.size(0),1)
         g_std = self.g_final(g_stddev)
         return [l_adv, g_adv, g_std]
-
 
 
 class Encoder(nn.Module):
@@ -684,8 +681,8 @@ class Encoder(nn.Module):
         self.stem = nn.Sequential(*stem)
 
         self.content = nn.Sequential(
-                        ConvLayer(in_channel, in_channel, 1), 
-                        ConvLayer(in_channel, in_channel, 1)
+                        ConvLayer(in_channel, in_channel, 3), 
+                        ConvLayer(in_channel, in_channel, 3)
                         )
         style  = []
         for i in range(log_size-num_down, 2, -1):
@@ -707,30 +704,87 @@ class Encoder(nn.Module):
         return content, style
 
 class StyleEncoder(nn.Module):
-    def __init__(self, size, style_dim, channel_multiplier=2, blur_kernel=[1, 3, 3, 1]):
-        super().__init__()
-        convs = [ConvLayer(3, channels[size], 1)]
+    def __init__(self):
+        self.mean = torch.nn.Parameter(torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
+        self.std = torch.nn.Parameter(torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
 
-        log_size = int(math.log(size, 2))
+        vgg_pretrained_features = torchvision.models.vgg19(pretrained=True).features.eval()
+        self.slice1 = torch.nn.Sequential()
+        self.slice2 = torch.nn.Sequential()
+        self.slice3 = torch.nn.Sequential()
+        self.slice4 = torch.nn.Sequential()
+        self.slice5 = torch.nn.Sequential()
+        for x in range(2):
+            self.slice1.add_module(str(x), vgg_pretrained_features[x])
+        for x in range(2, 7):
+            self.slice2.add_module(str(x), vgg_pretrained_features[x])
+        for x in range(7, 12):
+            self.slice3.add_module(str(x), vgg_pretrained_features[x])
+        for x in range(12, 21):
+            self.slice4.add_module(str(x), vgg_pretrained_features[x])
+        for x in range(21, 30):
+            self.slice5.add_module(str(x), vgg_pretrained_features[x])
 
-        in_channel = channels[size]
-        num_down = 6
+        for param in self.parameters():
+            param.requires_grad = False
 
-        for i in range(log_size, log_size-num_down, -1):
-            w = 2 ** (i - 1)
-            out_channel = channels[w]
-            convs.append(ConvLayer(in_channel, out_channel, 3, downsample=True))
-            in_channel = out_channel
+        self.mlp =  nn.Sequential(EqualLinear(610304, 512, activation='fused_lrelu'), 
+                        EqualLinear(512, 512, activation='fused_lrelu'), 
+                        EqualLinear(512, 512, activation='fused_lrelu'), 
+                        EqualLinear(512, style_dim),)
+        for param in self.mlp.parameters():
+            param.requires_grad = True
 
-        convs += [
-                nn.Flatten(),
-            EqualLinear(channels[4] * 4 * 4, channels[4], activation='fused_lrelu'), EqualLinear(channels[4], style_dim),
-                  ]
-        self.convs = nn.Sequential(*convs)
+    def compute_gram(self, x):
+        b, ch, h, w = x.size()
+        f = x.view(b, ch, w * h)
+        f_T = f.transpose(1, 2)
+        G = f.bmm(f_T) / (h * w * ch)
 
-    def forward(self, input):
-        style = self.convs(input)
-        return style.view(input.size(0), -1)
+        return G.view(b, -1)
+
+    def forward(self, X):
+        X = (X + 1) / 2
+        X = (X - self.mean) / self.std
+
+        h_relu1 = self.compute_gram(self.slice1(X))
+        h_relu2 = self.compute_gram(self.slice2(h_relu1))
+        h_relu3 = self.compute_gram(self.slice3(h_relu2))
+        h_relu4 = self.compute_gram(self.slice4(h_relu3))
+        h_relu5 = self.compute_gram(self.slice5(h_relu4))
+        feat = torch.cat([h_relu1, h_relu2, h_relu3, h_relu4, h_relu5], 1)
+        print(feat.shape)
+        out = self.mlp(feat)
+        return out
+
+
+
+
+#class StyleEncoder(nn.Module):
+#    def __init__(self, size, style_dim, channel_multiplier=2, blur_kernel=[1, 3, 3, 1]):
+#        super().__init__()
+#        convs = [ConvLayer(3, channels[size], 1)]
+#
+#        log_size = int(math.log(size, 2))
+#
+#        in_channel = channels[size]
+#        num_down = 6
+#
+#        for i in range(log_size, log_size-num_down, -1):
+#            w = 2 ** (i - 1)
+#            out_channel = channels[w]
+#            convs.append(ConvLayer(in_channel, out_channel, 3, downsample=True))
+#            in_channel = out_channel
+#
+#        convs += [
+#                nn.Flatten(),
+#            EqualLinear(channels[4] * 4 * 4, channels[4], activation='fused_lrelu'), EqualLinear(channels[4], style_dim),
+#                  ]
+#        self.convs = nn.Sequential(*convs)
+#
+#    def forward(self, input):
+#        style = self.convs(input)
+#        return style.view(input.size(0), -1)
 
 class LatDiscriminator(nn.Module):
     def __init__(self, style_dim):
